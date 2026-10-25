@@ -43,6 +43,10 @@ def score_repository(repository: dict, now: datetime | None = None) -> dict:
     This score intentionally uses metadata only. It is not a code audit.
     """
     current = now or datetime.now(timezone.utc)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=timezone.utc)
+    else:
+        current = current.astimezone(timezone.utc)
     components: list[dict] = []
     evidence: list[str] = []
     missing: list[str] = []
