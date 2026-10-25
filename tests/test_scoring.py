@@ -39,7 +39,7 @@ def test_missing_push_timestamp_is_not_scored_as_zero():
     result = score_repository(base_repository(pushed_at=None), now=NOW)
     assert "pushed_at" in result["missing_signals"]
     assert all(c["name"] != "Maintenance" for c in result["components"])
-    assert result["score_basis"] == "65/65 weighted points available"
+    assert result["score_basis"] == "56/65 weighted points available"
     assert any("unavailable" in note.lower() for note in result["notes"])
 
 
