@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import re
+from urllib.parse import urlsplit
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -16,13 +17,26 @@ class GitHubAPIError(RuntimeError):
 
 def normalize_repository(value: str) -> str:
     """Accept owner/name or a standard github.com repository URL."""
-    candidate = value.strip().rstrip("/")
-    candidate = re.sub(r"^git@github\.com:", "", candidate)
-    candidate = re.sub(r"^https?://github\.com/", "", candidate, flags=re.I)
+    raw = value.strip()
+    if raw.lower().startswith(("http://", "https://")):
+        parsed = urlsplit(raw)
+        if parsed.hostname is None or parsed.hostname.lower() != "github.com":
+            raise ValueError("Repository URL must use the github.com host.")
+        candidate = parsed.path.strip("/")
+        # Repository pages may include /tree/<branch> or other subpaths.
+        parts = candidate.split("/")
+        if len(parts) > 2:
+            candidate = "/".join(parts[:2])
+    elif raw.startswith("git@github.com:"):
+        candidate = raw[len("git@github.com:"):].rstrip("/")
+    else:
+        candidate = raw.rstrip("/")
+        if len(candidate.split("/")) != 2:
+            raise ValueError(
+                "Repository must be owner/name or a GitHub repository URL, "
+                "for example: https://github.com/pallets/flask"
+            )
     candidate = re.sub(r"\.git$", "", candidate, flags=re.I)
-    parts = candidate.split("/")
-    if len(parts) > 2:
-        candidate = "/".join(parts[:2])
     if not _REPO_PATTERN.fullmatch(candidate):
         raise ValueError(
             "Repository must be owner/name or a GitHub repository URL, "
