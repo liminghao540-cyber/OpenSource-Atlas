@@ -38,9 +38,9 @@ def test_archived_repository_is_flagged():
 def test_missing_push_timestamp_is_not_scored_as_zero():
     result = score_repository(base_repository(pushed_at=None), now=NOW)
     assert "pushed_at" in result["missing_signals"]
-    maintenance = next(c for c in result["components"] if c["name"] == "Maintenance")
-    assert maintenance["points"] <= maintenance["max_points"]
+    assert all(c["name"] != "Maintenance" for c in result["components"])
     assert result["score_basis"] == "65/65 weighted points available"
+    assert any("unavailable" in note.lower() for note in result["notes"])
 
 
 def test_old_push_receives_fewer_maintenance_points():
