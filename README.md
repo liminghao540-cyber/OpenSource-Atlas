@@ -16,19 +16,67 @@ OpenSource Atlas is an open-source repository intelligence tool. Its first relea
 
 ## Quick start
 
-```bash
-python -m venv .venv
-# macOS/Linux
-source .venv/bin/activate
-# Windows PowerShell: .venv\Scripts\Activate.ps1
+Create and activate a virtual environment, then install the project.
 
+### Windows PowerShell
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 python -m pip install -e .
+```
+
+If PowerShell blocks activation because of its execution policy, you can skip activation and call the environment's Python directly:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e .
+.\.venv\Scripts\atlas.exe inspect pallets/flask
+```
+
+### Windows Command Prompt
+
+```bat
+py -3.11 -m venv .venv
+.venv\Scripts\activate.bat
+python -m pip install -e .
+```
+
+### macOS / Linux
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
+```
+
+### Run an inspection
+
+```bash
+# Print a Markdown report to the terminal
 atlas inspect pallets/flask
-atlas inspect https://github.com/psf/requests --format json --output report.json
+
+# Save a Markdown report
 atlas inspect pallets/flask --format markdown --output report.md
+
+# Save a JSON report for scripts or further analysis
+atlas inspect https://github.com/psf/requests --format json --output report.json
+```
+
+The `atlas` command is installed by the package. If your shell cannot find it, confirm the virtual environment is active, or run it through Python:
+
+```bash
+python -m opensource_atlas.cli inspect pallets/flask
 ```
 
 Public GitHub API requests work without a token, but unauthenticated rate limits apply. OpenSource Atlas does not request or store GitHub credentials.
+
+## Troubleshooting
+
+- **Python version error:** use Python 3.11 or newer; check with `python --version` (Windows users can also try `py --list`).
+- **`atlas` command not found:** activate the environment where you installed the package, or use `python -m opensource_atlas.cli inspect owner/name`.
+- **GitHub API rate limit or access error:** wait before retrying. The first release uses unauthenticated public API access and does not ask you to paste a personal access token.
+- **Repository not found:** check the spelling and confirm the repository is public and its URL is a GitHub repository URL.
+- **Cannot write a report file:** choose a directory where your account has write permission, and check that the target file is not locked by another program.
 
 ## Score model
 
