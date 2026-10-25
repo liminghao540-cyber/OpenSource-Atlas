@@ -1,6 +1,11 @@
+import json
+from unittest.mock import MagicMock
+from urllib.error import HTTPError, URLError
+
 import pytest
 
-from opensource_atlas.github import normalize_repository
+from opensource_atlas import github
+from opensource_atlas.github import GitHubAPIError, fetch_repository, normalize_repository
 
 
 @pytest.mark.parametrize(
@@ -11,24 +16,29 @@ from opensource_atlas.github import normalize_repository
         ("https://github.com/psf/requests.git", "psf/requests"),
         ("git@github.com:psf/requests.git", "psf/requests"),
         ("https://github.com/psf/requests/tree/main", "psf/requests"),
+        ("  psf/requests  ", "psf/requests"),
     ],
 )
 def test_normalize_repository(value, expected):
     assert normalize_repository(value) == expected
 
 
-@pytest.mark.parametrize("value", ["", "not-a-repository", "owner/", "/repo", "https://example.com/a/b", "example.com/foo/bar", "owner/repo/extra", "https://github.com.evil.test/owner/repo"])
+@pytest.mark.parametrize(
+    "value",
+    [
+        "",
+        "not-a-repository",
+        "owner/",
+        "/repo",
+        "https://example.com/a/b",
+        "example.com/foo/bar",
+        "owner/repo/extra",
+        "https://github.com.evil.test/owner/repo",
+    ],
+)
 def test_invalid_repository_is_rejected(value):
     with pytest.raises(ValueError):
         normalize_repository(value)
-
-
-import json
-from urllib.error import HTTPError
-from unittest.mock import MagicMock
-
-from opensource_atlas import github
-from opensource_atlas.github import GitHubAPIError, fetch_repository
 
 
 def mock_response(payload):
@@ -39,13 +49,24 @@ def mock_response(payload):
     return manager
 
 
-def test_fetch_repository_returns_metadata(monkeypatch):
+def test_fetch_repository_returns_metadata_and_sends_expected_headers(monkeypatch):
     payload = {"full_name": "octo/example", "stargazers_count": 3}
-    monkeypatch.setattr(github, "urlopen", lambda request, timeout: mock_response(payload))
+    captured = {}
+
+    def fake_urlopen(request, timeout):
+        captured["request"] = request
+        captured["timeout"] = timeout
+        return mock_response(payload)
+
+    monkeypatch.setattr(github, "urlopen", fake_urlopen)
 
     result = fetch_repository("octo/example")
 
     assert result == payload
+    assert captured["timeout"] == 10.0
+    assert captured["request"].full_url.endswith("/repos/octo/example")
+    assert captured["request"].get_header("User-agent") == "OpenSource-Atlas/0.1.0"
+    assert captured["request"].get_header("Accept") == "application/vnd.github+json"
 
 
 @pytest.mark.parametrize("status", [403, 429])
@@ -69,9 +90,31 @@ def test_fetch_repository_reports_missing_repository(monkeypatch):
         fetch_repository("octo/missing")
 
 
-def test_fetch_repository_rejects_invalid_json(monkeypatch):
+def test_fetch_repository_reports_other_http_errors(monkeypatch):
+    def fail_request(request, timeout):
+        raise HTTPError(request.full_url, 500, "server error", {}, None)
+
+    monkeypatch.setattr(github, "urlopen", fail_request)
+
+    with pytest.raises(GitHubAPIError, match="HTTP 500"):
+        fetch_repository("octo/example")
+
+
+@pytest.mark.parametrize("error", [URLError("offline"), TimeoutError("timed out")])
+def test_fetch_repository_reports_connection_errors(monkeypatch, error):
+    def fail_request(request, timeout):
+        raise error
+
+    monkeypatch.setattr(github, "urlopen", fail_request)
+
+    with pytest.raises(GitHubAPIError, match="Could not reach GitHub"):
+        fetch_repository("octo/example")
+
+
+@pytest.mark.parametrize("body", [b"{not json", b"\xff\xfe\xff"])
+def test_fetch_repository_rejects_invalid_json_or_encoding(monkeypatch, body):
     response = MagicMock()
-    response.read.return_value = b"{not json"
+    response.read.return_value = body
     manager = MagicMock()
     manager.__enter__.return_value = response
     monkeypatch.setattr(github, "urlopen", lambda request, timeout: manager)
@@ -80,8 +123,11 @@ def test_fetch_repository_rejects_invalid_json(monkeypatch):
         fetch_repository("octo/example")
 
 
-def test_fetch_repository_rejects_unexpected_payload(monkeypatch):
-    monkeypatch.setattr(github, "urlopen", lambda request, timeout: mock_response(["not", "an", "object"]))
+@pytest.mark.parametrize("payload", [["not", "an", "object"], {}, {"message": "API error"}])
+def test_fetch_repository_rejects_unexpected_payload(monkeypatch, payload):
+    monkeypatch.setattr(
+        github, "urlopen", lambda request, timeout: mock_response(payload)
+    )
 
     with pytest.raises(GitHubAPIError, match="did not contain repository metadata"):
         fetch_repository("octo/example")
