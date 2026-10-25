@@ -49,3 +49,26 @@ def test_old_push_receives_fewer_maintenance_points():
     recent_points = next(c["points"] for c in recent["components"] if c["name"] == "Maintenance")
     old_points = next(c["points"] for c in old["components"] if c["name"] == "Maintenance")
     assert recent_points > old_points
+
+
+
+def test_naive_reference_datetime_is_treated_as_utc():
+    naive_now = datetime(2026, 1, 1)
+    aware_now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+    naive_result = score_repository(base_repository(), now=naive_now)
+    aware_result = score_repository(base_repository(), now=aware_now)
+
+    assert naive_result == aware_result
+
+
+def test_timezone_aware_reference_datetime_is_normalized_to_utc():
+    from datetime import timedelta
+
+    utc_now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    offset_now = datetime(2026, 1, 1, 8, tzinfo=timezone(timedelta(hours=8)))
+
+    utc_result = score_repository(base_repository(), now=utc_now)
+    offset_result = score_repository(base_repository(), now=offset_now)
+
+    assert utc_result == offset_result
