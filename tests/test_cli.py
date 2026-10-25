@@ -67,3 +67,18 @@ def test_inspect_rejects_invalid_repository_without_traceback(capsys):
     assert captured.out == ""
     assert "atlas: error:" in captured.err
     assert "Traceback" not in captured.err
+
+
+def test_inspect_reports_output_file_errors(monkeypatch, capsys):
+    monkeypatch.setattr(cli, "fetch_repository", lambda _: sample_repository())
+
+    def fail_write(*args, **kwargs):
+        raise OSError("permission denied")
+
+    monkeypatch.setattr("pathlib.Path.write_text", fail_write)
+    exit_code = cli.main(["inspect", "octo/example", "--output", "report.md"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert captured.out == ""
+    assert "atlas: could not write report: permission denied" in captured.err
