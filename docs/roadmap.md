@@ -33,10 +33,14 @@ OpenSource Atlas prioritizes trustworthy evidence and a reproducible local workf
 
 ## Stage 4 — Web dashboard
 
-- [ ] Build a thin dashboard on top of the existing analysis/report layer.
-- [ ] Show repository overview, score breakdown, evidence, and limitations.
-- [ ] Support accessible keyboard navigation and responsive layouts.
-- [ ] Keep API failures and rate limits visible to the user.
+- [x] Build an initial local dashboard on top of the existing analysis/report layer.
+- [x] Show repository overview, score breakdown, evidence, and limitations.
+- [x] Add responsive layouts and JSON/Markdown export controls.
+- [x] Keep API failures and rate-limit messages visible to the user.
+- [ ] Improve accessibility review and add end-to-end browser tests.
+- [ ] Design a production deployment model before any public hosting.
+
+**Current state:** initial local dashboard implemented; automated integration tests are added but still need a successful CI run and local acceptance check. It binds to loopback only and is not a hosted service.
 
 **Acceptance:** dashboard results agree with CLI reports for the same fixture; no fabricated repository data or success states.
 
