@@ -100,7 +100,7 @@ python -m pip install -e ".[dev]"
 pytest
 ```
 
-See the [architecture overview](docs/architecture.md), [product roadmap](docs/roadmap.md), [testing and acceptance guide](docs/testing.md), [changelog](CHANGELOG.md), [contributing guide](CONTRIBUTING.md), and [security policy](SECURITY.md).
+See the [architecture overview](docs/architecture.md), [product roadmap](docs/roadmap.md), [testing and acceptance guide](docs/testing.md), [changelog](CHANGELOG.md), [release process](docs/releasing.md), [contributing guide](CONTRIBUTING.md), and [security policy](SECURITY.md).
 
 ## Project status
 
