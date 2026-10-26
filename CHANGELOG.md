@@ -7,6 +7,10 @@ This project follows a lightweight Keep a Changelog structure. Versions are not 
 ## [Unreleased]
 
 ### Added
+- Initial local web dashboard using the existing report/scoring pipeline, with JSON and Markdown export.
+- Local-only dashboard server entry point (`atlas-web`) and dashboard integration tests.
+
+### Previously added
 - Initial project changelog and release-note conventions.
 - Engineering roadmap covering reliability, richer repository signals, and the future dashboard.
 
