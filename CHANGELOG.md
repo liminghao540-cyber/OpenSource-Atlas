@@ -10,7 +10,7 @@ This project follows a lightweight Keep a Changelog structure. Versions are not 
 - Initial local web dashboard using the existing report/scoring pipeline, with JSON and Markdown export.
 - Local-only dashboard server entry point (`atlas-web`) and dashboard integration tests.
 
-### Previously added
+### Project documentation
 - Initial project changelog and release-note conventions.
 - Engineering roadmap covering reliability, richer repository signals, and the future dashboard.
 
@@ -22,6 +22,6 @@ This project follows a lightweight Keep a Changelog structure. Versions are not 
 
 ### Known limitations
 - No source-code or dependency vulnerability analysis.
-- No historical trend store or web dashboard yet.
+- No historical trend store or hosted production dashboard yet.
 - Public unauthenticated GitHub API rate limits apply.
 - Repository health scores are triage heuristics, not objective quality or security guarantees.
