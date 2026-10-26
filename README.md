@@ -14,6 +14,7 @@ OpenSource Atlas is an open-source repository intelligence tool. Its first relea
 - Review maintenance recency, community adoption, project metadata, and repository signals.
 - See score components and the evidence behind each component.
 - Export reports as Markdown or JSON.
+- Use the optional local web dashboard to inspect public repositories in a browser.
 - Run locally with Python 3.11+ and no third-party runtime dependencies.
 
 ## Quick start
@@ -72,6 +73,18 @@ python -m opensource_atlas.cli inspect pallets/flask
 
 Public GitHub API requests work without a token, but unauthenticated rate limits apply. OpenSource Atlas does not request or store GitHub credentials.
 
+### Launch the local web dashboard
+
+After installing the package, run:
+
+```bash
+atlas-web
+```
+
+Then open [http://127.0.0.1:8765](http://127.0.0.1:8765) in your browser. Enter a public GitHub repository as `owner/name` or a GitHub URL. The dashboard displays the same report model as the CLI and supports JSON and Markdown export. Press Ctrl+C in the terminal to stop the server.
+
+The dashboard binds to localhost only and is intended for local use. It is not a hosted website and has not yet been reviewed for internet-facing deployment.
+
 ## Troubleshooting
 
 - **Python version error:** use Python 3.11 or newer; check with `python --version` (Windows users can also try `py --list`).
@@ -104,9 +117,9 @@ See the [architecture overview](docs/architecture.md), [product roadmap](docs/ro
 
 ## Project status
 
-The current implementation is an early-stage Python CLI. The automated workflow is configured for Python 3.11, 3.12, and 3.13; check the live [Actions page](https://github.com/liminghao540-cyber/OpenSource-Atlas/actions/workflows/tests.yml) for the status of the latest run. A configured workflow is not, by itself, evidence that the latest commit passed.
+The current implementation is an early-stage Python CLI plus an optional local dashboard. The automated workflow is configured for Python 3.11, 3.12, and 3.13; check the live [Actions page](https://github.com/liminghao540-cyber/OpenSource-Atlas/actions/workflows/tests.yml) for the status of the latest run. A configured workflow is not, by itself, evidence that the latest commit passed.
 
-The optional authenticated API client, historical snapshots, and web dashboard are planned work—not current features. See the [detailed roadmap](docs/roadmap.md) and [changelog](CHANGELOG.md).
+The authenticated API client and historical snapshots remain planned work. The local dashboard is implemented as an initial version; a hosted production dashboard is still planned. See the [detailed roadmap](docs/roadmap.md) and [changelog](CHANGELOG.md).
 
 ## License
 
