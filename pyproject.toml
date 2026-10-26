@@ -17,6 +17,7 @@ dev = ["pytest>=8.0"]
 
 [project.scripts]
 atlas = "opensource_atlas.cli:main"
+atlas-web = "opensource_atlas.web:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
