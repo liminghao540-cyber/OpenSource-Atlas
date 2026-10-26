@@ -1,0 +1,53 @@
+name: Bug report
+description: Report a reproducible defect in OpenSource Atlas
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please avoid posting access tokens, private repository URLs, or other sensitive information.
+  - type: input
+    id: version
+    attributes:
+      label: OpenSource Atlas version or commit
+      description: Include a release version or commit SHA if known.
+      placeholder: "0.1.0 or commit SHA"
+    validations:
+      required: false
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "3.12.2"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide the exact command and minimal steps.
+      placeholder: "1. Install ... 2. Run ... 3. Observe ..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Redact tokens, personal data, and private repository details.
+    validations:
+      required: false
