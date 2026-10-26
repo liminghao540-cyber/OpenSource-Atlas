@@ -1,5 +1,7 @@
 # OpenSource Atlas
 
+[![Tests](https://github.com/liminghao540-cyber/OpenSource-Atlas/actions/workflows/tests.yml/badge.svg)](https://github.com/liminghao540-cyber/OpenSource-Atlas/actions/workflows/tests.yml) [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/) [![Status](https://img.shields.io/badge/status-early%20development-orange)](docs/roadmap.md)
+
 **Understand the health of a GitHub repository with transparent, actionable evidence.**
 
 OpenSource Atlas is an open-source repository intelligence tool. Its first release inspects public GitHub repository metadata, calculates an explainable health score, and exports Markdown or JSON reports.
@@ -98,17 +100,13 @@ python -m pip install -e ".[dev]"
 pytest
 ```
 
-See [the architecture overview](docs/architecture.md), [contributing guide](CONTRIBUTING.md), and [security policy](SECURITY.md).
+See the [architecture overview](docs/architecture.md), [product roadmap](docs/roadmap.md), [testing and acceptance guide](docs/testing.md), [changelog](CHANGELOG.md), [contributing guide](CONTRIBUTING.md), and [security policy](SECURITY.md).
 
-## Roadmap
+## Project status
 
-- [x] Public repository metadata inspection
-- [x] Explainable health scoring
-- [x] Markdown and JSON reports
-- [x] Unit tests for scoring and report generation
-- [ ] Optional authenticated GitHub API client
-- [ ] Historical trend snapshots
-- [ ] Web dashboard
+The current implementation is an early-stage Python CLI. The automated workflow is configured for Python 3.11, 3.12, and 3.13; check the live [Actions page](https://github.com/liminghao540-cyber/OpenSource-Atlas/actions/workflows/tests.yml) for the status of the latest run. A configured workflow is not, by itself, evidence that the latest commit passed.
+
+The optional authenticated API client, historical snapshots, and web dashboard are planned work—not current features. See the [detailed roadmap](docs/roadmap.md) and [changelog](CHANGELOG.md).
 
 ## License
 
