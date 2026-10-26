@@ -75,8 +75,8 @@ class Handler(BaseHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", "0"))
         except ValueError:
             length = 0
-        if length <= 0 or length > 4096:
-            self.send_body(413, b'{"error":"Request body must be between 1 and 4096 bytes."}', "application/json; charset=utf-8")
+        if length <= 0 or length > 1048576:
+            self.send_body(413, b'{"error":"Request body must be between 1 byte and 1 MiB."}', "application/json; charset=utf-8")
             return
         try:
             payload = json.loads(self.rfile.read(length).decode("utf-8"))
