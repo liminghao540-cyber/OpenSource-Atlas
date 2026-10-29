@@ -1,0 +1,5 @@
+{
+  "PollSeconds": 10,
+  "AutoQuickScanOnThreat": true,
+  "ShowConsoleAlerts": true
+}
