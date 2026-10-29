@@ -1,0 +1,10 @@
+{
+  "PollSeconds": 10,
+  "AlertOnNewListener": true,
+  "AlertOnFirewallChange": true,
+  "AutoQuickScanOnDefenderThreat": true,
+  "EnableTemporaryFirewallBlock": false,
+  "TemporaryBlockMinutes": 10,
+  "ExplicitBlockList": [],
+  "MaxAutoQuickScansPerHour": 2
+}
