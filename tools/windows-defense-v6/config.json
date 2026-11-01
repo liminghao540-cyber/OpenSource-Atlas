@@ -1,0 +1,11 @@
+{
+  "PollSeconds": 8,
+  "HighRiskThreshold": 60,
+  "MediumRiskThreshold": 35,
+  "NewConnectionAlert": true,
+  "AlertOnNewListener": true,
+  "MonitorFirewall": true,
+  "ReadDefenderEvents": true,
+  "MaxEventsPerRun": 500,
+  "MaxSeenEventKeys": 1500
+}
