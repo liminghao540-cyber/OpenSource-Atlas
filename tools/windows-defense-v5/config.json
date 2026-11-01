@@ -1,0 +1,13 @@
+{
+  "PollSeconds": 8,
+  "ResponseMode": "MonitorOnly",
+  "AlertOnNewListener": true,
+  "AlertOnFirewallChange": true,
+  "ReadDefenderEvents": true,
+  "AutoQuickScanOnThreat": false,
+  "MaxQuickScansPerHour": 2,
+  "EnableApprovedTemporaryBlocks": false,
+  "ApprovedBlockList": [],
+  "TemporaryBlockMinutes": 10,
+  "MaxOwnedFirewallRules": 10
+}
