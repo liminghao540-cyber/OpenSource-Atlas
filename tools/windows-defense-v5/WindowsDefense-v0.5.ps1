@@ -45,6 +45,7 @@ $script:OwnedRules = @{}
 $script:QuickScanTimes = New-Object 'System.Collections.Generic.List[datetime]'
 $script:LastDefenderRecord = 0L
 $script:SeenConnections = @{}
+$script:ProcessEvidenceCache = @{}
 
 function Write-Log([string]$Level, [string]$Message) {
     $line = '{0} [{1}] {2}' -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'),$Level,$Message
@@ -84,11 +85,19 @@ function Get-ProcessEvidence([int]$ProcessId) {
         try { $path = $proc.Path } catch {}
     } catch {}
     if ($path -and (Test-Path -LiteralPath $path -PathType Leaf)) {
+        $cacheKey = "$ProcessId|$path"
+        try { $cacheStamp = (Get-Item -LiteralPath $path -ErrorAction Stop).LastWriteTimeUtc.Ticks } catch { $cacheStamp = 0 }
+        $cacheKey = "$cacheKey|$cacheStamp"
+        if ($script:ProcessEvidenceCache.ContainsKey($cacheKey)) { return $script:ProcessEvidenceCache[$cacheKey] }
         try {
             $sig = Get-AuthenticodeSignature -FilePath $path
             $signature = [string]$sig.Status
         } catch { $signature = 'CheckFailed' }
         try { $sha256 = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash } catch {}
+        $evidence = [pscustomobject]@{ Name=$name; Path=$path; Signature=$signature; SHA256=$sha256 }
+        if ($script:ProcessEvidenceCache.Count -ge 256) { $script:ProcessEvidenceCache.Clear() }
+        $script:ProcessEvidenceCache[$cacheKey] = $evidence
+        return $evidence
     }
     [pscustomobject]@{ Name=$name; Path=$path; Signature=$signature; SHA256=$sha256 }
 }
@@ -106,6 +115,23 @@ function Get-ListenerSnapshot {
             }
         }
     } catch { Write-Log 'WARN' 'TCP listener inventory unavailable; check Windows version and permissions.' }
+    return @($items)
+}
+
+function Get-ConnectionSnapshot {
+    $items = @()
+    try {
+        foreach ($item in @(Get-NetTCPConnection -State Established -ErrorAction Stop)) {
+            $pidValue = [int]$item.OwningProcess
+            $evidence = Get-ProcessEvidence $pidValue
+            $key = '{0}:{1}|{2}:{3}|{4}' -f $item.LocalAddress,$item.LocalPort,$item.RemoteAddress,$item.RemotePort,$pidValue
+            $items += [pscustomobject]@{
+                Key=$key; LocalAddress=[string]$item.LocalAddress; LocalPort=[int]$item.LocalPort
+                RemoteAddress=[string]$item.RemoteAddress; RemotePort=[int]$item.RemotePort; PID=$pidValue
+                Process=$evidence.Name; Path=$evidence.Path; Signature=$evidence.Signature; SHA256=$evidence.SHA256
+            }
+        }
+    } catch { Write-Log 'WARN' 'Established TCP connection inventory unavailable.' }
     return @($items)
 }
 
@@ -244,6 +270,8 @@ Invoke-ApprovedBlocks
 
 $previousListeners = @{}
 foreach ($listener in (Get-ListenerSnapshot)) { $previousListeners[$listener.Key] = $true }
+$previousConnections = @{}
+foreach ($connection in (Get-ConnectionSnapshot)) { $previousConnections[$connection.Key] = $true }
 $previousFirewall = Get-FirewallSnapshot
 $firewallAlerted = $false
 try {
@@ -268,6 +296,19 @@ try {
             }
         }
         $previousListeners = $currentMap
+
+        $currentConnections = Get-ConnectionSnapshot
+        $connectionMap = @{}
+        foreach ($connection in $currentConnections) {
+            $connectionMap[$connection.Key] = $true
+            if (-not $previousConnections.ContainsKey($connection.Key)) {
+                $risk = Get-RiskScore $connection.Process $connection.Path $connection.Signature
+                $message = "RISK=$($risk.Score)/100 evidence=$($risk.Evidence) established=$($connection.LocalAddress):$($connection.LocalPort)->$($connection.RemoteAddress):$($connection.RemotePort) PID=$($connection.PID) process=$($connection.Process) signature=$($connection.Signature)"
+                Write-Log 'INFO' $message
+                Add-Ledger $connection.Key 'ObserveEstablishedConnection' 'LOGGED' $message
+            }
+        }
+        $previousConnections = $connectionMap
 
         $firewall = Get-FirewallSnapshot
         if (($firewall -join ';') -ne ($previousFirewall -join ';')) {
