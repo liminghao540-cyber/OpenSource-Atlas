@@ -81,7 +81,7 @@ function Save-State {
     } catch { Write-Log 'WARN' 'Could not save deduplication state.' }
 }
 function Add-Event([string]$Type,[string]$Key,[int]$Score,[string]$Severity,[string]$Summary,[object]$Evidence) {
-    if ($script:Seen.ContainsKey($Key)) { return }
+    if ($script:Seen.ContainsKey($Key)) { return $false }
     $script:Seen[$Key] = Get-Date
     $record = [pscustomobject]@{
         Timestamp=(Get-Date).ToString('o'); Type=$Type; EventKey=$Key
@@ -91,6 +91,7 @@ function Add-Event([string]$Type,[string]$Key,[int]$Score,[string]$Severity,[str
         ($record | ConvertTo-Json -Depth 7 -Compress) | Add-Content -LiteralPath $eventsPath -Encoding UTF8
         Write-Log $Severity "RISK=$Score/100 type=$Type $Summary"
     } catch { Write-Log 'WARN' 'Could not append event record.' }
+    return $true
 }
 function Get-ProcessEvidence([int]$Id) {
     $name='unknown'; $path=$null; $signature='Unavailable'; $hash=$null
@@ -174,7 +175,8 @@ function Test-PublicUnicastAddress([string]$RawAddress) {
         $b=$ip.GetAddressBytes()
         if ($b[0] -eq 0 -or $b[0] -eq 10 -or $b[0] -eq 127 -or $b[0] -ge 224 -or ($b[0] -eq 169 -and $b[1] -eq 254) -or ($b[0] -eq 172 -and $b[1] -ge 16 -and $b[1] -le 31) -or ($b[0] -eq 192 -and $b[1] -eq 168)) { return $false }
     } elseif ($ip.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetworkV6) {
-        if ($ip.IsIPv6UniqueLocal) { return $false }
+        $v6bytes=$ip.GetAddressBytes()
+        if (($v6bytes[0] -band 0xFE) -eq 0xFC) { return $false }
     } else { return $false }
     return $true
 }
@@ -275,8 +277,9 @@ try {
                 $risk=Get-Risk $c.Process $c.RemotePort $fanout
                 $summary="process=$($c.Process.Name) pid=$($c.PID) remote=$($c.RemoteAddress):$($c.RemotePort) signature=$($c.Process.Signature) fanout=$fanout"
                 $key=Get-Fingerprint("Connection|$($c.Key)")
-                Add-Event 'NewConnection' $key $risk.Score $risk.Severity $summary ([pscustomobject]@{Process=$c.Process;RemoteAddress=$c.RemoteAddress;RemotePort=$c.RemotePort;Fanout=$fanout;RiskEvidence=$risk.Evidence})
-                Invoke-ApprovalBlock $key $c.RemoteAddress $risk.Score
+                if (Add-Event 'NewConnection' $key $risk.Score $risk.Severity $summary ([pscustomobject]@{Process=$c.Process;RemoteAddress=$c.RemoteAddress;RemotePort=$c.RemotePort;Fanout=$fanout;RiskEvidence=$risk.Evidence})) {
+                    Invoke-ApprovalBlock $key $c.RemoteAddress $risk.Score
+                }
             }
         }
         $next=@{}; foreach($c in $connections){$next[$c.Key]=$true}; $script:PreviousConnections=$next
