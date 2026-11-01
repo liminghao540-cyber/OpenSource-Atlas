@@ -81,7 +81,7 @@ function Save-State {
     } catch { Write-Log 'WARN' 'Could not save deduplication state.' }
 }
 function Add-Event([string]$Type,[string]$Key,[int]$Score,[string]$Severity,[string]$Summary,[object]$Evidence) {
-    if ($script:Seen.ContainsKey($Key)) { return $false }
+    if ($script:Seen.ContainsKey($Key)) { return }
     $script:Seen[$Key] = Get-Date
     $record = [pscustomobject]@{
         Timestamp=(Get-Date).ToString('o'); Type=$Type; EventKey=$Key
@@ -91,7 +91,6 @@ function Add-Event([string]$Type,[string]$Key,[int]$Score,[string]$Severity,[str
         ($record | ConvertTo-Json -Depth 7 -Compress) | Add-Content -LiteralPath $eventsPath -Encoding UTF8
         Write-Log $Severity "RISK=$Score/100 type=$Type $Summary"
     } catch { Write-Log 'WARN' 'Could not append event record.' }
-    return $true
 }
 function Get-ProcessEvidence([int]$Id) {
     $name='unknown'; $path=$null; $signature='Unavailable'; $hash=$null
@@ -277,7 +276,8 @@ try {
                 $risk=Get-Risk $c.Process $c.RemotePort $fanout
                 $summary="process=$($c.Process.Name) pid=$($c.PID) remote=$($c.RemoteAddress):$($c.RemotePort) signature=$($c.Process.Signature) fanout=$fanout"
                 $key=Get-Fingerprint("Connection|$($c.Key)")
-                if (Add-Event 'NewConnection' $key $risk.Score $risk.Severity $summary ([pscustomobject]@{Process=$c.Process;RemoteAddress=$c.RemoteAddress;RemotePort=$c.RemotePort;Fanout=$fanout;RiskEvidence=$risk.Evidence})) {
+                if (-not $script:Seen.ContainsKey($key)) {
+                    Add-Event 'NewConnection' $key $risk.Score $risk.Severity $summary ([pscustomobject]@{Process=$c.Process;RemoteAddress=$c.RemoteAddress;RemotePort=$c.RemotePort;Fanout=$fanout;RiskEvidence=$risk.Evidence})
                     Invoke-ApprovalBlock $key $c.RemoteAddress $risk.Score
                 }
             }
