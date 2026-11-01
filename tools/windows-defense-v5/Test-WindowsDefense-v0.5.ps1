@@ -27,6 +27,13 @@ Assert-True ($config.TemporaryBlockMinutes -ge 1 -and $config.TemporaryBlockMinu
 
 $source = Get-Content -LiteralPath $scriptPath -Raw
 Assert-True ($source -notmatch '(?im)\b(Stop-Process|Remove-Item|Set-ItemProperty)\b') 'Main monitor contains no process-kill, file-delete, or registry-write command'
-Assert-True ($source -match 'WindowsDefense-v5-TemporaryBlock-') 'Firewall rules use a dedicated v0.5 ownership prefix'
+Assert-True ($source -match 'WindowsDefense-v5-TemporaryBlock-') 'Firewall rules use a dedicated v0.5 display-name prefix'
+Assert-True ($source -match 'ManagedBy=WindowsDefense-v0.5;Scope=TemporaryInboundBlock') 'Firewall cleanup requires an ownership marker'
+Assert-True ($source -match 'Remove-NetFirewallRule -Name \$ruleName') 'Expiry cleanup removes only a marker-verified rule name'
+Assert-True ($source -match 'ResponseMode = ''MonitorOnly''') 'Main script safe response default is MonitorOnly'
 
-Write-Host 'All static checks passed. Runtime behavior still requires a controlled Windows test.' -ForegroundColor Cyan
+$rollbackSource = Get-Content -LiteralPath $rollbackPath -Raw
+Assert-True ($rollbackSource -match '\$_.Description -eq \$marker') 'Rollback requires the exact ownership marker'
+Assert-True ($rollbackSource -match 'Remove-NetFirewallRule -Name \$rule.Name') 'Rollback removes by exact verified firewall rule name'
+
+Write-Host 'All static safety checks passed. Runtime behavior still requires a controlled Windows test.' -ForegroundColor Cyan
