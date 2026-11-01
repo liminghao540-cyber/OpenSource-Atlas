@@ -26,8 +26,8 @@ Run PowerShell as Administrator only if you need access to protected event data 
 ## Response modes
 
 - `MonitorOnly` (default): log and score observations only.
-- `Approval`: when approved temporary blocks are enabled, ask for interactive confirmation before each configured IP block.
-- `Auto`: apply only the exact IPs manually entered in `ApprovedBlockList`, and only when `EnableApprovedTemporaryBlocks` is true. This is not automatic threat-intelligence blocking.
+- `Approval`: when approved temporary blocks are enabled, ask for interactive confirmation before applying each configured IP block at startup.
+- `Auto`: apply only the exact IPs manually entered in `ApprovedBlockList` at startup, and only when `EnableApprovedTemporaryBlocks` is true. This is a user-supplied static block list, **not** an event-triggered automatic threat response or threat-intelligence feed. New connection observations are currently logged and scored only.
 
 To use a block list, verify every address independently, set the response mode deliberately, enable the feature, and keep the TTL short. Blocking affects inbound traffic through **Windows Firewall**; monitoring itself does not depend on Windows Firewall.
 
