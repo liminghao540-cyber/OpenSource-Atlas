@@ -2,19 +2,24 @@ name: Windows Defense v0.6 checks
 
 on:
   push:
-    branches: [windows-defense-v6]
-    paths:
-      - "tools/windows-defense-v6/**"
-      - ".github/workflows/windows-defense-v6.yml"
+    branches:
+      - windows-defense-v6
   pull_request:
-    branches: [windows-defense-v6]
-    paths:
-      - "tools/windows-defense-v6/**"
-      - ".github/workflows/windows-defense-v6.yml"
+    branches:
+      - windows-defense-v6
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-defense-v6-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   powershell-static-checks:
     runs-on: windows-latest
+    timeout-minutes: 5
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
