@@ -46,6 +46,7 @@ $script:QuickScanTimes = New-Object 'System.Collections.Generic.List[datetime]'
 $script:LastDefenderRecord = 0L
 $script:SeenConnections = @{}
 $script:ProcessEvidenceCache = @{}
+$script:FirewallOwnershipMarker = 'ManagedBy=WindowsDefense-v0.5;Scope=TemporaryInboundBlock'
 
 function Write-Log([string]$Level, [string]$Message) {
     $line = '{0} [{1}] {2}' -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'),$Level,$Message
@@ -191,11 +192,21 @@ function Remove-ExpiredOwnedRules {
         $expiry = [datetime]::MinValue
         if (-not [datetime]::TryParse([string]$record.ExpiresAt,[ref]$expiry) -or $expiry -le $now) {
             try {
-                $owned = @(Get-NetFirewallRule -DisplayName $displayName -ErrorAction SilentlyContinue)
+                $ruleName = [string]$record.Name
+                $owned = @()
+                if ($ruleName) { $owned = @(Get-NetFirewallRule -Name $ruleName -ErrorAction SilentlyContinue) }
                 if ($owned.Count -gt 0) {
-                    Remove-NetFirewallRule -DisplayName $displayName -ErrorAction Stop
+                    $verified = @($owned | Where-Object {
+                        $_.Description -eq $script:FirewallOwnershipMarker -and
+                        $_.DisplayName -like 'WindowsDefense-v5-TemporaryBlock-*'
+                    })
+                    if ($verified.Count -eq 1) {
+                        Remove-NetFirewallRule -Name $ruleName -ErrorAction Stop
+                    } else {
+                        throw 'Firewall rule ownership marker did not match; refusing to remove it.'
+                    }
                 }
-                Write-Log 'RECOVERY' "Expired v0.5 rule removed or already absent: $displayName"
+                Write-Log 'RECOVERY' "Expired verified v0.5 rule removed or already absent: $displayName"
                 Add-Ledger $displayName 'RemoveTemporaryRule' 'SUCCESS' 'Expired owned rule removed or absent.'
             } catch {
                 Write-Log 'WARN' "Could not remove expired rule $displayName; use the rollback script after review."
@@ -223,6 +234,9 @@ function Invoke-ApprovedBlocks {
         }
         $safeAddress = $rawAddress -replace '[^0-9A-Fa-f:.]','_'
         $displayName = "WindowsDefense-v5-TemporaryBlock-$safeAddress"
+        $addressBytes = [System.Text.Encoding]::UTF8.GetBytes($rawAddress)
+        $addressHash = ([System.BitConverter]::ToString(([System.Security.Cryptography.SHA256]::Create()).ComputeHash($addressBytes))).Replace('-','').Substring(0,12)
+        $ruleName = "WDv5-TempBlock-$addressHash"
         if ($script:OwnedRules.ContainsKey($displayName)) { continue }
         if ($script:OwnedRules.Count -ge $cfg.MaxOwnedFirewallRules) {
             Write-Log 'WARN' 'Owned firewall rule limit reached; remaining approved entries skipped.'; break
@@ -236,9 +250,10 @@ function Invoke-ApprovedBlocks {
             }
         }
         try {
-            New-NetFirewallRule -DisplayName $displayName -Direction Inbound -Action Block -RemoteAddress $rawAddress -Profile Any -Enabled True -ErrorAction Stop | Out-Null
+            New-NetFirewallRule -Name $ruleName -DisplayName $displayName -Group 'WindowsDefense-v0.5' -Description $script:FirewallOwnershipMarker -Direction Inbound -Action Block -RemoteAddress $rawAddress -Profile Any -Enabled True -ErrorAction Stop | Out-Null
             $expires = (Get-Date).AddMinutes($cfg.TemporaryBlockMinutes).ToString('o')
-            $script:OwnedRules[$displayName] = [pscustomobject]@{ Name=$displayName; RemoteAddress=$rawAddress; ExpiresAt=$expires }
+            $script:OwnedRules[$displayName] = [pscustomobject]@{ Name=$ruleName; DisplayName=$displayName; RemoteAddress=$rawAddress; ExpiresAt=$expires }
+            Save-State
             Write-Log 'ACTION' "Created approved temporary INBOUND block for $rawAddress; expires $expires. Uses Windows Firewall."
             Add-Ledger $rawAddress 'TemporaryInboundBlock' 'SUCCESS' "Rule=$displayName; Expires=$expires"
         } catch {
