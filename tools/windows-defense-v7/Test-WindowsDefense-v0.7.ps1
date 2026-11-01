@@ -8,7 +8,7 @@ $s=Get-Content $script -Raw
 foreach($x in @('Get-NetTCPConnection','Get-ProcessEvidence','Get-Risk','Get-Fingerprint','events.jsonl','response-ledger-v0.7.jsonl','DefenderDetection','FirewallStatusUnavailable','Invoke-ApprovalBlock','Test-PublicUnicastAddress','Remove-ExpiredOwnedRules','Test-OwnedRule')){if($s -notmatch [regex]::Escape($x)){throw "Missing feature: $x"}}
 foreach($x in @('Stop-Process','Remove-Item','Set-NetFirewallProfile','Set-MpPreference')){if($s -match [regex]::Escape($x)){throw "Forbidden command: $x"}}
 if($s -notmatch "ResponseMode = 'MonitorOnly'"){throw 'Default must be MonitorOnly'}
-if(-not $s.Contains("EnableApprovalBlocks = $false")){throw "Approval disabled by default"}
+if(-not $s.Contains('EnableApprovalBlocks = $false')){throw 'Approval disabled by default'}
 if($s -notmatch 'Type BLOCK to approve'){throw 'Explicit approval prompt missing'}
 if($s -notmatch '-Direction Outbound -Action Block -RemoteAddress'){throw 'Must block remote IP outbound'}
 if($s -notmatch 'TemporaryBlockMinutes -le 60'){throw 'TTL bound missing'}
