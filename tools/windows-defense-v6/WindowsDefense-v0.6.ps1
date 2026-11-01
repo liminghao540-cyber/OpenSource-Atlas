@@ -138,7 +138,7 @@ function Get-FirewallState {
 function Read-DefenderEvents {
     if (-not $cfg.ReadDefenderEvents) { return }
     try {
-        $items=@(Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Windows Defender/Operational';Id=1116,1117} -MaxEvents 30 -ErrorAction Stop | Where-Object { [long]$_.RecordId -gt $script:LastDefenderRecord } | Sort-Object RecordId)
+        $items=@(Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Windows Defender/Operational';Id=1116,1117} -MaxEvents $cfg.MaxEventsPerRun -ErrorAction Stop | Where-Object { [long]$_.RecordId -gt $script:LastDefenderRecord } | Sort-Object RecordId)
         foreach ($ev in $items) {
             $script:LastDefenderRecord=[Math]::Max($script:LastDefenderRecord,[long]$ev.RecordId)
             $msg=($ev.Message -replace '\s+',' ').Trim()
@@ -205,8 +205,10 @@ try {
                 Add-Event 'FirewallChange' (Get-Fingerprint("Firewall|$($fw -join ';')")) 50 'WARN' ("Firewall profile state changed: "+($fw -join ';')) ([pscustomobject]@{Profiles=$fw})
                 $script:PreviousFirewall=$fw
             }
-            if(@($fw | Where-Object {$_ -match 'Enabled=False' -or $_ -eq 'UNAVAILABLE'}).Count -gt 0) {
-                Add-Event 'FirewallDegraded' (Get-Fingerprint("FirewallDegraded|$($fw -join ';')")) 75 'ALERT' ("Firewall disabled or status unavailable: "+($fw -join ';')) ([pscustomobject]@{Profiles=$fw})
+            if(@($fw | Where-Object {$_ -match 'Enabled=False'}).Count -gt 0) {
+                Add-Event 'FirewallDisabled' (Get-Fingerprint("FirewallDisabled|$($fw -join ';')")) 75 'ALERT' ("One or more firewall profiles report Enabled=False: "+($fw -join ';')) ([pscustomobject]@{Profiles=$fw})
+            } elseif(@($fw | Where-Object {$_ -eq 'UNAVAILABLE'}).Count -gt 0) {
+                Add-Event 'FirewallStatusUnavailable' (Get-Fingerprint("FirewallStatusUnavailable|$($fw -join ';')")) 20 'WARN' 'Firewall profile state could not be read; this is not evidence that the firewall is disabled.' ([pscustomobject]@{Profiles=$fw})
             }
         }
         Read-DefenderEvents
