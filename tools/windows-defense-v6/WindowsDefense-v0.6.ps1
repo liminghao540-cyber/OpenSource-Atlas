@@ -144,7 +144,9 @@ function Read-DefenderEvents {
             $msg=($ev.Message -replace '\s+',' ').Trim()
             if ($msg.Length -gt 350) { $msg=$msg.Substring(0,350) }
             $key="Defender|$($ev.RecordId)"
-            Add-Event 'Defender' $key 80 'ALERT' "Defender event id=$($ev.Id) record=$($ev.RecordId) $msg" ([pscustomobject]@{RecordId=$ev.RecordId;EventId=$ev.Id})
+            $defenderScore=20; $defenderSeverity='INFO'; $defenderType='DefenderAction'
+            if ($ev.Id -eq 1116) { $defenderScore=85; $defenderSeverity='ALERT'; $defenderType='DefenderDetection' }
+            Add-Event $defenderType $key $defenderScore $defenderSeverity "Defender event id=$($ev.Id) record=$($ev.RecordId) $msg" ([pscustomobject]@{RecordId=$ev.RecordId;EventId=$ev.Id})
         }
     } catch { Write-Log 'INFO' 'Defender event log unavailable or not readable; continuing other checks.' }
 }
