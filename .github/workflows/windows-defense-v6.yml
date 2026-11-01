@@ -1,0 +1,25 @@
+name: Windows Defense v0.6 checks
+
+on:
+  push:
+    branches: [windows-defense-v6]
+    paths:
+      - "tools/windows-defense-v6/**"
+      - ".github/workflows/windows-defense-v6.yml"
+  pull_request:
+    branches: [windows-defense-v6]
+    paths:
+      - "tools/windows-defense-v6/**"
+      - ".github/workflows/windows-defense-v6.yml"
+
+jobs:
+  powershell-static-checks:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Run Windows PowerShell 5.1 self-test
+        shell: powershell
+        run: |
+          $PSVersionTable.PSVersion
+          .\tools\windows-defense-v6\Test-WindowsDefense-v0.6.ps1
