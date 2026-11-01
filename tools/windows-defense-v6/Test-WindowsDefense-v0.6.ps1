@@ -17,6 +17,6 @@ if($cfg.PollSeconds -lt 5 -or $cfg.PollSeconds -gt 60){throw 'PollSeconds out of
 if($cfg.HighRiskThreshold -lt 40 -or $cfg.HighRiskThreshold -gt 100){throw 'HighRiskThreshold out of range'}
 if($cfg.MediumRiskThreshold -lt 20 -or $cfg.MediumRiskThreshold -ge $cfg.HighRiskThreshold){throw 'MediumRiskThreshold invalid'}
 if($cfg.MaxSeenEventKeys -lt 100 -or $cfg.MaxSeenEventKeys -gt 5000){throw 'MaxSeenEventKeys out of range'}
-if($src -notmatch "\$ev\.Id -eq 1116"){throw 'Defender detection event 1116 must be handled separately'}
+if(-not $src.Contains('$ev.Id -eq 1116')){throw 'Defender detection event 1116 must be handled separately'}
 if($src -notmatch "DefenderAction"){throw 'Defender action event classification missing'}
 Write-Host 'PASS: PowerShell syntax, monitor-only safety, feature presence, and config bounds.'
