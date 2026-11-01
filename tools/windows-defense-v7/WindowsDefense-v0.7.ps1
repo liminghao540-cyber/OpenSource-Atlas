@@ -172,7 +172,7 @@ function Test-PublicUnicastAddress([string]$RawAddress) {
     if ([System.Net.IPAddress]::IsLoopback($ip) -or $ip.IsIPv6LinkLocal -or $ip.IsIPv6Multicast -or $ip.IsIPv6SiteLocal -or $ip.IsIPv4MappedToIPv6) { return $false }
     if ($ip.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork) {
         $b=$ip.GetAddressBytes()
-        if ($b[0] -eq 0 -or $b[0] -eq 10 -or $b[0] -eq 127 -or $b[0] -ge 224 -or ($b[0] -eq 169 -and $b[1] -eq 254) -or ($b[0] -eq 172 -and $b[1] -ge 16 -and $b[1] -le 31) -or ($b[0] -eq 192 -and $b[1] -eq 168)) { return $false }
+        if ($b[0] -eq 0 -or $b[0] -eq 10 -or $b[0] -eq 127 -or $b[0] -ge 224 -or ($b[0] -eq 100 -and $b[1] -ge 64 -and $b[1] -le 127) -or ($b[0] -eq 169 -and $b[1] -eq 254) -or ($b[0] -eq 172 -and $b[1] -ge 16 -and $b[1] -le 31) -or ($b[0] -eq 192 -and ($b[1] -eq 0 -or $b[1] -eq 168 -or $b[1] -eq 2)) -or ($b[0] -eq 198 -and ($b[1] -eq 18 -or ($b[1] -eq 51 -and $b[2] -eq 100))) -or ($b[0] -eq 203 -and $b[1] -eq 0 -and $b[2] -eq 113)) { return $false }
     } elseif ($ip.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetworkV6) {
         $v6bytes=$ip.GetAddressBytes()
         if (($v6bytes[0] -band 0xFE) -eq 0xFC) { return $false }
