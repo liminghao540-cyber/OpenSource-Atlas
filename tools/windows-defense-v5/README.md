@@ -11,7 +11,7 @@ This is a defensive monitoring utility, **not** an antivirus, EDR, or guarantee 
 - The tool never kills processes, deletes files, changes registry policy, disables Windows Firewall, or edits Defender exclusions.
 - No IP is blocked merely because it is unknown or appears in a connection.
 - Temporary rules are limited to an explicit, manually reviewed `ApprovedBlockList`, have a 1–60 minute TTL, and use a unique v0.5 rule-name prefix.
-- Only rules with the exact `WindowsDefense-v5-TemporaryBlock-` prefix are eligible for expiry cleanup or rollback.
+- A temporary rule must match both the dedicated display-name prefix and an exact ownership description marker before cleanup or rollback. The tool removes by exact internal firewall rule name, not by a broad display-name wildcard.
 
 ## Start
 
