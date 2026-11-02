@@ -16,7 +16,7 @@ def build_response_plan(assessment: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(assessment, dict):
         raise TypeError("assessment must be a dictionary")
     severity = assessment.get("severity", "info")
-    if severity not in _RESPONSE_TEMPLATES:
+    if not isinstance(severity, str) or severity not in _RESPONSE_TEMPLATES:
         raise ValueError("assessment severity must be info, low, medium, high, or critical")
     steps = [{"action": action, "description": description, "status": "proposed"}
              for action, description in _RESPONSE_TEMPLATES[severity]]
