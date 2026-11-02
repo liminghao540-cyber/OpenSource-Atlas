@@ -14,7 +14,9 @@ def test_snapshot_validation_and_platform_guard(monkeypatch):
         windows_defense.collect_windows_host_snapshot()
 
 
-def test_snapshot_uses_fixed_script_and_json_stdin(monkeypatch):
+def test_snapshot_uses_encoded_powershell_command(monkeypatch):
+    import base64
+
     monkeypatch.setattr(windows_defense.platform, "system", lambda: "Windows")
     captured = {}
     payload = {"established": [], "listeners": [], "firewall_profiles": [],
@@ -25,9 +27,13 @@ def test_snapshot_uses_fixed_script_and_json_stdin(monkeypatch):
     monkeypatch.setattr(windows_defense.subprocess, "run", fake_run)
     result = windows_defense.collect_windows_host_snapshot(max_connections=12)
     assert result["read_only"] is True
-    assert json.loads(captured["kwargs"]["input"])["max_connections"] == 12
     assert "-NoProfile" in captured["args"]
-    assert "12" not in captured["args"]
+    assert "-EncodedCommand" in captured["args"]
+    assert "input" not in captured["kwargs"]
+    encoded = captured["args"][captured["args"].index("-EncodedCommand") + 1]
+    script = base64.b64decode(encoded).decode("utf-16le")
+    assert "max_connections" in script
+    assert "12" in script
 
 
 def test_risk_scoring_and_defender_mapping():

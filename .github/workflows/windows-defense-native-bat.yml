@@ -1,0 +1,42 @@
+name: Windows Defense Native BAT
+on:
+  push:
+    branches: [v8.0.5-windows-defense-exe]
+    paths:
+      - 'Start-WindowsDefense-V8.0.5.bat'
+      - 'WindowsDefense-V8.0.5.ps1'
+      - 'docs/WINDOWS_DEFENSE_NATIVE_BAT.md'
+      - '.github/workflows/windows-defense-native-bat.yml'
+  workflow_dispatch:
+jobs:
+  package-native-bat:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate PowerShell syntax
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path WindowsDefense-V8.0.5.ps1), [ref]$tokens, [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Host $_.ToString() }
+            throw "PowerShell syntax validation failed."
+          }
+          Write-Host "PowerShell syntax validation passed."
+      - name: Assemble ZIP
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/native-bat | Out-Null
+          Copy-Item Start-WindowsDefense-V8.0.5.bat, WindowsDefense-V8.0.5.ps1, docs/WINDOWS_DEFENSE_NATIVE_BAT.md dist/native-bat/
+          Compress-Archive -Path dist/native-bat/* -DestinationPath dist/OpenSourceAtlas-Defense-Native-BAT.zip -Force
+      - name: Upload native BAT package
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenSourceAtlas-Defense-Native-BAT-Windows-10
+          path: dist/OpenSourceAtlas-Defense-Native-BAT.zip
+          if-no-files-found: error
+          retention-days: 14

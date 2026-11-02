@@ -33,13 +33,63 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install . pyinstaller
-      - name: Build standalone executable
+      - name: Compile-check defense launcher
+        run: python -m py_compile packaging/windows/defense_launcher.py
+      - name: Build repository dashboard executable
         run: |
           pyinstaller --noconfirm --clean --onefile --name OpenSourceAtlas --collect-submodules opensource_atlas packaging/windows/launcher.py
-      - name: Upload Windows executable
+      - name: Upload repository dashboard executable
         uses: actions/upload-artifact@v4
         with:
           name: OpenSourceAtlas-Windows-10-x64
           path: dist/OpenSourceAtlas.exe
+          if-no-files-found: error
+          retention-days: 14
+      - name: Build dedicated Windows Defense executable
+        run: |
+          pyinstaller --noconfirm --clean --onefile --windowed --name OpenSourceAtlasDefense --collect-submodules opensource_atlas packaging/windows/defense_launcher.py
+      - name: Upload Windows Defense executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenSourceAtlas-Defense-Windows-10-x64
+          path: dist/OpenSourceAtlasDefense.exe
+          if-no-files-found: error
+          retention-days: 14
+      - name: Assemble BAT launcher bundle
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/bat-bundle/src/opensource_atlas | Out-Null
+          New-Item -ItemType Directory -Force -Path dist/bat-bundle/packaging/windows | Out-Null
+          Copy-Item Start-WindowsDefense-V8.0.5.bat dist/bat-bundle/
+          Copy-Item packaging/windows/defense_launcher.py dist/bat-bundle/packaging/windows/
+          Copy-Item src/opensource_atlas/*.py dist/bat-bundle/src/opensource_atlas/
+          Compress-Archive -Path dist/bat-bundle/* -DestinationPath dist/OpenSourceAtlas-Defense-BAT.zip -Force
+      - name: Upload BAT launcher bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenSourceAtlas-Defense-BAT-Windows-10
+          path: dist/OpenSourceAtlas-Defense-BAT.zip
+          if-no-files-found: error
+          retention-days: 14
+      - name: Validate native PowerShell script syntax
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path WindowsDefense-V8.0.5.ps1), [ref]$tokens, [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) { $errors | Format-List | Out-String | Write-Error }
+      - name: Assemble native BAT bundle
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/native-bat | Out-Null
+          Copy-Item Start-WindowsDefense-V8.0.5.bat, WindowsDefense-V8.0.5.ps1, docs/WINDOWS_DEFENSE_NATIVE_BAT.md dist/native-bat/
+          Compress-Archive -Path dist/native-bat/* -DestinationPath dist/OpenSourceAtlas-Defense-Native-BAT.zip -Force
+      - name: Upload native BAT bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenSourceAtlas-Defense-Native-BAT-Windows-10
+          path: dist/OpenSourceAtlas-Defense-Native-BAT.zip
           if-no-files-found: error
           retention-days: 14
