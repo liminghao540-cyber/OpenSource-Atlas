@@ -2,26 +2,29 @@
 
 All notable changes to OpenSource Atlas are documented here.
 
-This project follows a lightweight Keep a Changelog structure. Versions are not considered released until a corresponding Git tag or GitHub Release exists.
+This project follows a lightweight Keep a Changelog structure. A version is considered released only when its matching Git tag and GitHub Release have been published.
+
+## [8.0.1] - Unreleased
+
+### Added
+- Deterministic analysis of caller-supplied normalized security events, with explicit evidence and limitations.
+- Approval-gated, dry-run response plan generation; no response action is executed.
+- Bounded JSONL event parsing with per-line validation errors and configurable input limits.
+- V8 upgrade plan documenting architecture, milestones, acceptance criteria, and safety boundaries.
+
+### Preserved
+- Existing public GitHub repository inspection, explainable scoring, Markdown/JSON reports, and local-only dashboard.
+- Python 3.11, 3.12, and 3.13 automated test coverage.
+
+### Security and limitations
+- Event ingestion parses supplied text only; it is not a host agent, SIEM connector, network scanner, or telemetry collector.
+- Response planning is proposal-only. Execution is disabled.
+- No credentials are collected or stored.
+- Detection results are triage signals, not proof of compromise or proof of safety.
 
 ## [Unreleased]
 
-### Added
-- Initial local web dashboard using the existing report/scoring pipeline, with JSON and Markdown export.
-- Local-only dashboard server entry point (`atlas-web`) and dashboard integration tests.
-
-### Project documentation
-- Initial project changelog and release-note conventions.
-- Engineering roadmap covering reliability, richer repository signals, and the future dashboard.
-
-### Current baseline
-- Public GitHub repository metadata inspection.
-- Explainable heuristic scoring with component-level evidence.
-- Markdown and JSON report output.
-- Automated test workflow targeting Python 3.11, 3.12, and 3.13.
-
-### Known limitations
-- No source-code or dependency vulnerability analysis.
-- No historical trend store or hosted production dashboard yet.
-- Public unauthenticated GitHub API rate limits apply.
-- Repository health scores are triage heuristics, not objective quality or security guarantees.
+### Planned
+- Asset inventory, finding correlation, deduplication, and provenance-aware risk views.
+- Connector health and operational audit visibility.
+- Dashboard views for findings and response-plan review.
