@@ -1,21 +1,21 @@
 # OpenSource Atlas
 
-[![Tests](https://github.com/liminghao540-cyber/OpenSource-Atlas/actions/workflows/tests.yml/badge.svg)](https://github.com/liminghao540-cyber/OpenSource-Atlas/actions/workflows/tests.yml) [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/) [![Version](https://img.shields.io/badge/version-8.0.1--candidate-orange)](CHANGELOG.md)
+[![Tests](https://github.com/liminghao540-cyber/OpenSource-Atlas/actions/workflows/tests.yml/badge.svg)](https://github.com/liminghao540-cyber/OpenSource-Atlas/actions/workflows/tests.yml) [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/) [![Version](https://img.shields.io/badge/version-8.0.2--candidate-orange)](CHANGELOG.md)
 
 **Understand public repositories and analyze supplied security events with transparent, actionable evidence.**
 
-OpenSource Atlas is evolving from a GitHub repository intelligence tool into an explainable, approval-gated security operations foundation. The V8.0.1 release candidate preserves the existing repository inspection CLI and local dashboard while adding bounded security-event ingestion, deterministic event analysis, and dry-run response planning.
+OpenSource Atlas is evolving from a GitHub repository intelligence tool into an explainable, approval-gated security operations foundation. The V8.0.2 candidate preserves the repository inspection CLI and local dashboard while adding bounded security-event analysis, asset correlation, and an explicitly invoked, read-only Windows Event Log snapshot collector.
 
-> **Release status:** V8.0.1 is being prepared; it is not a published GitHub Release yet. Security analysis is limited to caller-supplied events. Response execution is disabled.
+> **Release status:** V8.0.2 is under development on a separate branch; it is not a published GitHub Release. Host event collection is opt-in and read-only. Response execution is disabled.
 
-## V8 capabilities
+## V8.0.2 capabilities
 
-- Parse caller-supplied JSONL security events with per-line validation and configurable size/count limits.
-- Analyze normalized events using deterministic rules and return explainable findings.
-- Generate response proposals in dry-run mode; every plan requires approval and has execution disabled.
-- Preserve the repository intelligence CLI, explainable scoring, Markdown/JSON reports, and local-only dashboard.
+- Normalize caller-supplied asset records and report duplicate identifiers.
+- Correlate equivalent findings with stable fingerprints, provenance, and expiry-aware triage suppressions.
+- Read a bounded snapshot from the Windows Application, System, or Security event log when explicitly invoked.
+- Keep response planning in dry-run mode; no containment or destructive action is executed.
 
-See the [V8.0.1 installation and verification guide](docs/V8.0.1_INSTALL.md), [V8 upgrade plan](docs/V8_UPGRADE_PLAN.md), and [changelog](CHANGELOG.md).
+See the [V8.0.2 design](docs/V8.0.2_DESIGN.md), [Windows collection guide](docs/V8.0.2_WINDOWS_COLLECTION.md), and [changelog](CHANGELOG.md).
 
 ## Existing repository intelligence features
 
@@ -28,30 +28,22 @@ See the [V8.0.1 installation and verification guide](docs/V8.0.1_INSTALL.md), [V
 
 ## Quick start
 
-Create and activate a virtual environment, then install the project.
-
 ### Windows PowerShell
 
 ```powershell
 py -3.11 -m venv .venv
-.\\.venv\\Scripts\\Activate.ps1
-python -m pip install -e .
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
+python -m pytest
 ```
 
 ### Windows Command Prompt
 
 ```bat
 py -3.11 -m venv .venv
-.venv\\Scripts\\activate.bat
-python -m pip install -e .
-```
-
-### macOS / Linux
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -e .
+.venv\Scripts\activate.bat
+python -m pip install -e ".[dev]"
+python -m pytest
 ```
 
 ### Run repository inspection
@@ -67,11 +59,21 @@ atlas inspect pallets/flask --format json --output report.json
 atlas-web
 ```
 
-Open http://127.0.0.1:8765. The dashboard binds to localhost only; it is not intended for internet-facing deployment.
+Open http://127.0.0.1:8765. The dashboard binds to localhost only.
 
-## V8 security-event API (library)
+## Explicit Windows Event Log snapshot
 
-The initial event APIs are Python library interfaces, not separate CLI commands or background services:
+```python
+from opensource_atlas.windows_events import collect_windows_events
+
+snapshot = collect_windows_events(log_name="System", hours=24, max_events=100)
+for event in snapshot["events"]:
+    print(event)
+```
+
+This is a bounded, read-only snapshot, not continuous monitoring. Begin with the System or Application log. Security log access may require administrator privileges. The collector does not clear logs, install services or scheduled tasks, upload events, or execute response actions.
+
+## Security-event analysis API
 
 ```python
 from opensource_atlas.events import ingest_jsonl
@@ -86,22 +88,11 @@ for event in parsed["events"]:
     print(plan)
 ```
 
-JSONL ingestion parses the string supplied by the caller. It does not read files, connect to SIEM products, collect telemetry, or authenticate event sources. Detection is a triage aid, not proof of compromise or proof of safety. Response plans are proposals only: `execution_enabled` remains false.
-
-## Development and tests
-
-```bash
-python -m pip install -e ".[dev]"
-python -m pytest
-```
-
-See the [architecture overview](docs/architecture.md), [roadmap](docs/roadmap.md), [testing guide](docs/testing.md), [release process](docs/releasing.md), [contributing guide](CONTRIBUTING.md), and [security policy](SECURITY.md).
-
 ## Limitations and security
 
-- No endpoint agent, host monitoring, network scanning, source-code execution, or vulnerability scanner is included.
-- No credentials or tokens are collected or stored by the V8 foundation.
+- No continuous endpoint agent, network scanner, or EDR capability is included.
+- Windows collection is explicit, bounded, local, and read-only.
+- No credentials or tokens are collected or stored.
 - No blocking, isolation, deletion, account modification, or network change is performed.
-- Production deployment requires authentication, authorization, secure secret management, threat modeling, and independent security review.
-- Repository health scores and event findings are heuristic triage signals.
+- Detection results are triage signals, not proof of compromise or proof of safety.
 - No license has been selected. Do not assume the code is licensed for reuse until a license is added.
