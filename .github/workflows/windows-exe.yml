@@ -55,3 +55,19 @@ jobs:
           path: dist/OpenSourceAtlasDefense.exe
           if-no-files-found: error
           retention-days: 14
+      - name: Assemble BAT launcher bundle
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/bat-bundle/src/opensource_atlas | Out-Null
+          New-Item -ItemType Directory -Force -Path dist/bat-bundle/packaging/windows | Out-Null
+          Copy-Item Start-WindowsDefense-V8.0.5.bat dist/bat-bundle/
+          Copy-Item packaging/windows/defense_launcher.py dist/bat-bundle/packaging/windows/
+          Copy-Item src/opensource_atlas/*.py dist/bat-bundle/src/opensource_atlas/
+          Compress-Archive -Path dist/bat-bundle/* -DestinationPath dist/OpenSourceAtlas-Defense-BAT.zip -Force
+      - name: Upload BAT launcher bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenSourceAtlas-Defense-BAT-Windows-10
+          path: dist/OpenSourceAtlas-Defense-BAT.zip
+          if-no-files-found: error
+          retention-days: 14
