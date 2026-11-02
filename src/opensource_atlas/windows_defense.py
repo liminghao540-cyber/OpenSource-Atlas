@@ -99,11 +99,22 @@ def collect_windows_host_snapshot(*, max_connections: int = 500,
         raise OSError("Windows host telemetry is available only on Windows")
     request = json.dumps({"max_connections": max_connections,
                           "max_defender_events": max_defender_events})
+    # Use -EncodedCommand so PowerShell never has to parse a second JSON
+    # payload from redirected stdin (which can be consumed inconsistently by
+    # host startup/command processing on Windows PowerShell 5.1).
+    request_literal = request.replace("'", "''")
+    script = _SCRIPT.replace(
+        "$request = [Console]::In.ReadToEnd() | ConvertFrom-Json",
+        "$request = ConvertFrom-Json -InputObject '" + request_literal + "'",
+    )
+    encoded_script = __import__("base64").b64encode(
+        script.encode("utf-16le")
+    ).decode("ascii")
     try:
         completed = subprocess.run(
             ["powershell.exe", "-NoLogo", "-NoProfile", "-NonInteractive",
-             "-ExecutionPolicy", "RemoteSigned", "-Command", _SCRIPT],
-            input=request, capture_output=True, text=True, encoding="utf-8",
+             "-ExecutionPolicy", "RemoteSigned", "-EncodedCommand", encoded_script],
+            capture_output=True, text=True, encoding="utf-8",
             errors="replace", timeout=timeout_seconds, check=False,
         )
     except FileNotFoundError as exc:
@@ -111,7 +122,8 @@ def collect_windows_host_snapshot(*, max_connections: int = 500,
     except subprocess.TimeoutExpired as exc:
         raise TimeoutError("Windows host telemetry collection timed out") from exc
     if completed.returncode != 0:
-        detail = (completed.stderr or "PowerShell returned an error").strip()[:500]
+        detail = (completed.stderr or completed.stdout or
+                  f"PowerShell exited with code {completed.returncode} and no diagnostic output").strip()[-500:]
         raise RuntimeError(f"Windows host telemetry failed: {detail}")
     try:
         payload = json.loads(completed.stdout.strip() or "{}")
