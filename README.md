@@ -1,21 +1,23 @@
 # OpenSource Atlas
 
-[![Tests](https://github.com/liminghao540-cyber/OpenSource-Atlas/actions/workflows/tests.yml/badge.svg)](https://github.com/liminghao540-cyber/OpenSource-Atlas/actions/workflows/tests.yml) [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/) [![Version](https://img.shields.io/badge/version-8.0.2--candidate-orange)](CHANGELOG.md)
+[![Tests](https://github.com/liminghao540-cyber/OpenSource-Atlas/actions/workflows/tests.yml/badge.svg)](https://github.com/liminghao540-cyber/OpenSource-Atlas/actions/workflows/tests.yml) [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/) [![Version](https://img.shields.io/badge/version-8.0.3--candidate-orange)](CHANGELOG.md)
 
 **Understand public repositories and analyze supplied security events with transparent, actionable evidence.**
 
-OpenSource Atlas is evolving from a GitHub repository intelligence tool into an explainable, approval-gated security operations foundation. The V8.0.2 candidate preserves the repository inspection CLI and local dashboard while adding bounded security-event analysis, asset correlation, and an explicitly invoked, read-only Windows Event Log snapshot collector.
+OpenSource Atlas is evolving from a GitHub repository intelligence tool into an explainable, approval-gated security operations foundation. The V8.0.3 candidate preserves the repository inspection CLI and local dashboard while adding asset correlation, read-only Windows Event Log snapshots, and bounded foreground polling.
 
-> **Release status:** V8.0.2 is under development on a separate branch; it is not a published GitHub Release. Host event collection is opt-in and read-only. Response execution is disabled.
+> **Release status:** V8.0.3 is under development on a separate branch; it is not a published GitHub Release. Windows monitoring is opt-in, foreground-only, bounded, and read-only. Response execution is disabled.
 
-## V8.0.2 capabilities
+## V8.0.3 capabilities
 
 - Normalize caller-supplied asset records and report duplicate identifiers.
 - Correlate equivalent findings with stable fingerprints, provenance, and expiry-aware triage suppressions.
-- Read a bounded snapshot from the Windows Application, System, or Security event log when explicitly invoked.
+- Read a bounded snapshot from the Windows Application, System, or Security event log.
+- Poll an allow-listed Windows Event Log incrementally using an in-memory record-ID cursor.
+- Stop monitoring explicitly; each run has finite poll and runtime limits.
 - Keep response planning in dry-run mode; no containment or destructive action is executed.
 
-See the [V8.0.2 design](docs/V8.0.2_DESIGN.md), [Windows collection guide](docs/V8.0.2_WINDOWS_COLLECTION.md), and [changelog](CHANGELOG.md).
+See the [V8.0.3 Windows monitor guide](docs/V8.0.3_WINDOWS_MONITOR.md), [V8.0.2 design](docs/V8.0.2_DESIGN.md), [Windows snapshot guide](docs/V8.0.2_WINDOWS_COLLECTION.md), and [changelog](CHANGELOG.md).
 
 ## Existing repository intelligence features
 
@@ -71,7 +73,16 @@ for event in snapshot["events"]:
     print(event)
 ```
 
-This is a bounded, read-only snapshot, not continuous monitoring. Begin with the System or Application log. Security log access may require administrator privileges. The collector does not clear logs, install services or scheduled tasks, upload events, or execute response actions.
+## Bounded Windows Event Log monitor
+
+```python
+from opensource_atlas.windows_monitor import iter_windows_events
+
+for event in iter_windows_events(log_name="System", max_polls=60, max_runtime_seconds=300):
+    print(event)
+```
+
+The monitor is started only when the caller runs this code. It defaults to the newest record as its baseline and then yields later records. Press Ctrl+C in a foreground script or pass a threading.Event-compatible stop_event to stop early. See the monitor guide for limits and details.
 
 ## Security-event analysis API
 
@@ -90,9 +101,10 @@ for event in parsed["events"]:
 
 ## Limitations and security
 
-- No continuous endpoint agent, network scanner, or EDR capability is included.
+- No endpoint discovery, network scanner, or EDR capability is included.
 - Windows collection is explicit, bounded, local, and read-only.
 - No credentials or tokens are collected or stored.
 - No blocking, isolation, deletion, account modification, or network change is performed.
 - Detection results are triage signals, not proof of compromise or proof of safety.
+- CI mocks PowerShell calls; run the documented live check on the target Windows 10 PC before relying on monitoring.
 - No license has been selected. Do not assume the code is licensed for reuse until a license is added.

@@ -3,6 +3,18 @@
 All notable changes to OpenSource Atlas are documented here.
 A version is released only when its matching Git tag and GitHub Release exist.
 
+## [8.0.3] - Unreleased
+
+### Added
+- Opt-in, bounded Windows Event Log polling iterator with in-memory record-ID cursor.
+- Explicit stop-event support, finite poll/runtime limits, and incremental event delivery.
+- Mocked tests and Windows monitor usage/safety documentation.
+
+### Security and limitations
+- Foreground, caller-started, read-only polling only; no service, scheduled task, persistence, or auto-start.
+- No telemetry upload, process termination, file deletion, quarantine, firewall changes, or automatic response.
+- PowerShell integration is mocked in CI; live Windows 10 validation remains required.
+
 ## [8.0.2] - Unreleased
 
 ### Added
