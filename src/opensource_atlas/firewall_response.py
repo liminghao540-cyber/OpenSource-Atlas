@@ -61,7 +61,9 @@ def _public_address(value: str) -> str:
         address = ipaddress.ip_address(value.strip())
     except ValueError as exc:
         raise ValueError("remote_address must be a valid IP address") from exc
-    if not address.is_global or getattr(address, "ipv4_mapped", None) is not None:
+    if (not address.is_global or address.is_multicast or address.is_unspecified
+            or address.is_reserved or address.is_loopback or address.is_link_local
+            or getattr(address, "ipv4_mapped", None) is not None):
         raise ValueError("only public global unicast IP addresses are eligible")
     return str(address)
 
