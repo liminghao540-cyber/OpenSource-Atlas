@@ -1,25 +1,26 @@
 # OpenSource Atlas
 
-[![Tests](https://github.com/liminghao540-cyber/OpenSource-Atlas/actions/workflows/tests.yml/badge.svg)](https://github.com/liminghao540-cyber/OpenSource-Atlas/actions/workflows/tests.yml) [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/) [![Version](https://img.shields.io/badge/version-8.0.1--candidate-orange)](CHANGELOG.md)
+[![Tests](https://github.com/liminghao540-cyber/OpenSource-Atlas/actions/workflows/tests.yml/badge.svg)](https://github.com/liminghao540-cyber/OpenSource-Atlas/actions/workflows/tests.yml) [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/) [![Version](https://img.shields.io/badge/version-8.0.4--candidate-orange)](CHANGELOG.md)
 
 **Understand public repositories and analyze supplied security events with transparent, actionable evidence.**
 
-OpenSource Atlas is evolving from a GitHub repository intelligence tool into an explainable, approval-gated security operations foundation. The V8.0.1 release candidate preserves the existing repository inspection CLI and local dashboard while adding bounded security-event ingestion, deterministic event analysis, and dry-run response planning.
+OpenSource Atlas is evolving from a GitHub repository intelligence tool into an explainable, approval-gated security operations foundation. V8.0.4 integrates bounded Windows host telemetry from the V6 line and the optional human-approved temporary firewall response from V7.
 
-> **Release status:** V8.0.1 is being prepared; it is not a published GitHub Release yet. Security analysis is limited to caller-supplied events. Response execution is disabled.
+> **Release status:** V8.0.4 is under development on a separate branch; it is not a published GitHub Release. Windows monitoring is opt-in, foreground-only, bounded, and read-only. Firewall response is a separate explicit action and is disabled unless directly invoked with approval.
 
-## V8 capabilities
+## V8.0.4 Windows Defense integration
 
-- Parse caller-supplied JSONL security events with per-line validation and configurable size/count limits.
-- Analyze normalized events using deterministic rules and return explainable findings.
-- Generate response proposals in dry-run mode; every plan requires approval and has execution disabled.
-- Preserve the repository intelligence CLI, explainable scoring, Markdown/JSON reports, and local-only dashboard.
+- V6-style TCP established/listening sockets, process name/PID/path, Authenticode status, bounded SHA-256, firewall profile state, and Defender events 1116/1117.
+- Explainable heuristic risk scoring and bounded foreground monitoring with in-memory deduplication.
+- V7-style temporary outbound block for a validated public IP, only after explicit approval token BLOCK.
+- 1–60 minute TTL, maximum five owned rules, local response ledger, expiry cleanup, and preview-first exact rollback.
+- No automatic blocking, process termination, file deletion, quarantine, firewall-profile changes, Defender changes, or remote telemetry upload.
 
-See the [V8.0.1 installation and verification guide](docs/V8.0.1_INSTALL.md), [V8 upgrade plan](docs/V8_UPGRADE_PLAN.md), and [changelog](CHANGELOG.md).
+See the [V8.0.4 Windows Defense guide](docs/V8.0.4_WINDOWS_DEFENSE.md), [V8.0.3 Windows monitor guide](docs/V8.0.3_WINDOWS_MONITOR.md), and [changelog](CHANGELOG.md).
 
 ## Existing repository intelligence features
 
-- Inspect public GitHub repositories by URL or `owner/name`.
+- Inspect public GitHub repositories by URL or owner/name.
 - Review maintenance recency, community adoption, project metadata, and repository signals.
 - See score components and the evidence behind each component.
 - Export reports as Markdown or JSON.
@@ -28,80 +29,51 @@ See the [V8.0.1 installation and verification guide](docs/V8.0.1_INSTALL.md), [V
 
 ## Quick start
 
-Create and activate a virtual environment, then install the project.
-
 ### Windows PowerShell
 
-```powershell
-py -3.11 -m venv .venv
-.\\.venv\\Scripts\\Activate.ps1
-python -m pip install -e .
-```
-
-### Windows Command Prompt
-
-```bat
-py -3.11 -m venv .venv
-.venv\\Scripts\\activate.bat
-python -m pip install -e .
-```
-
-### macOS / Linux
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -e .
-```
+    py -3.11 -m venv .venv
+    .\.venv\Scripts\Activate.ps1
+    python -m pip install -e ".[dev]"
+    python -m pytest
 
 ### Run repository inspection
 
-```bash
-atlas inspect pallets/flask
-atlas inspect pallets/flask --format json --output report.json
-```
+    atlas inspect pallets/flask
+    atlas inspect pallets/flask --format json --output report.json
 
-### Launch the local dashboard
+### Local dashboard
 
-```bash
-atlas-web
-```
+    atlas-web
 
-Open http://127.0.0.1:8765. The dashboard binds to localhost only; it is not intended for internet-facing deployment.
+Open http://127.0.0.1:8765. The dashboard binds to localhost only.
 
-## V8 security-event API (library)
+## V8.0.4 Windows host telemetry
 
-The initial event APIs are Python library interfaces, not separate CLI commands or background services:
+    from opensource_atlas.windows_defense import collect_windows_host_snapshot, analyze_host_snapshot
 
-```python
-from opensource_atlas.events import ingest_jsonl
-from opensource_atlas.detection import analyze_event
-from opensource_atlas.response import build_response_plan
+    snapshot = collect_windows_host_snapshot(max_connections=500)
+    findings = analyze_host_snapshot(snapshot)
+    print(findings)
 
-parsed = ingest_jsonl('{"event_type":"malware_detected","source":"demo","asset":"host-01"}')
-for event in parsed["events"]:
-    finding = analyze_event(event)
-    plan = build_response_plan(finding)
-    print(finding)
-    print(plan)
-```
+For bounded foreground monitoring, use iter_windows_defense_events. The first
+snapshot establishes a baseline; later samples yield newly observed events.
 
-JSONL ingestion parses the string supplied by the caller. It does not read files, connect to SIEM products, collect telemetry, or authenticate event sources. Detection is a triage aid, not proof of compromise or proof of safety. Response plans are proposals only: `execution_enabled` remains false.
+## V7-style response — explicit approval only
 
-## Development and tests
+    from opensource_atlas.firewall_response import create_temporary_outbound_block
 
-```bash
-python -m pip install -e ".[dev]"
-python -m pytest
-```
+    create_temporary_outbound_block("8.8.8.8", approval="BLOCK", ttl_minutes=10)
 
-See the [architecture overview](docs/architecture.md), [roadmap](docs/roadmap.md), [testing guide](docs/testing.md), [release process](docs/releasing.md), [contributing guide](CONTRIBUTING.md), and [security policy](SECURITY.md).
+This requires Windows and an elevated PowerShell context. It blocks the specified
+public IP for all outbound traffic and may interrupt legitimate services. It
+does not kill a process or alter firewall profiles. Expiry cleanup is caller-
+triggered; it is not a background timer. Rollback previews by default. Read the
+full safety guide before using this function.
 
 ## Limitations and security
 
-- No endpoint agent, host monitoring, network scanning, source-code execution, or vulnerability scanner is included.
-- No credentials or tokens are collected or stored by the V8 foundation.
-- No blocking, isolation, deletion, account modification, or network change is performed.
-- Production deployment requires authentication, authorization, secure secret management, threat modeling, and independent security review.
-- Repository health scores and event findings are heuristic triage signals.
+- Windows APIs are opt-in, bounded, local, and invoked only by the caller.
+- Some process paths, signatures, hashes, firewall state, and event logs may be unavailable without sufficient permissions.
+- Detection results are triage signals, not proof of compromise or proof of safety.
+- CI mocks PowerShell calls; perform the documented live Windows 10 validation before relying on monitoring.
 - No license has been selected. Do not assume the code is licensed for reuse until a license is added.

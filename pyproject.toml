@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "opensource-atlas"
-version = "8.0.1"
+version = "8.0.4"
 description = "Explainable repository intelligence and approval-gated security event analysis"
 readme = "README.md"
 requires-python = ">=3.11"
