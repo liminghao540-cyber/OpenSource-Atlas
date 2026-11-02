@@ -130,6 +130,9 @@ def iter_windows_events(
         raise ValueError("stop_event must provide an is_set() method")
     if platform.system() != "Windows":
         raise OSError("Windows Event Log monitoring is available only on Windows")
+    # Honor an already-set stop request before invoking PowerShell for baseline.
+    if stop_event is not None and stop_event.is_set():
+        return
 
     cursor = 0
     if start_from_latest:
