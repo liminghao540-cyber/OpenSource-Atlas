@@ -11,6 +11,7 @@ def test_all_plans_are_dry_run_and_require_approval(severity):
     assert all(step["status"] == "proposed" for step in plan["steps"])
 
 
-def test_unknown_severity_is_rejected():
+@pytest.mark.parametrize("severity", ["unknown", [], None, 3])
+def test_invalid_severity_is_rejected(severity):
     with pytest.raises(ValueError):
-        build_response_plan({"severity": "unknown"})
+        build_response_plan({"severity": severity})
