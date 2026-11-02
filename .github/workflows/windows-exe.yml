@@ -33,13 +33,25 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install . pyinstaller
-      - name: Build standalone executable
+      - name: Compile-check defense launcher
+        run: python -m py_compile packaging/windows/defense_launcher.py
+      - name: Build repository dashboard executable
         run: |
           pyinstaller --noconfirm --clean --onefile --name OpenSourceAtlas --collect-submodules opensource_atlas packaging/windows/launcher.py
-      - name: Upload Windows executable
+      - name: Upload repository dashboard executable
         uses: actions/upload-artifact@v4
         with:
           name: OpenSourceAtlas-Windows-10-x64
           path: dist/OpenSourceAtlas.exe
+          if-no-files-found: error
+          retention-days: 14
+      - name: Build dedicated Windows Defense executable
+        run: |
+          pyinstaller --noconfirm --clean --onefile --windowed --name OpenSourceAtlasDefense --collect-submodules opensource_atlas packaging/windows/defense_launcher.py
+      - name: Upload Windows Defense executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenSourceAtlas-Defense-Windows-10-x64
+          path: dist/OpenSourceAtlasDefense.exe
           if-no-files-found: error
           retention-days: 14
