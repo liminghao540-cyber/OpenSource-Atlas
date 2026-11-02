@@ -67,3 +67,18 @@ def test_monitor_honors_stop_before_collection(monkeypatch):
 def test_monitor_validates_limits():
     with pytest.raises(ValueError):
         list(windows_defense.iter_windows_defense_events(poll_interval_seconds=1))
+
+
+def test_monitor_reports_firewall_profile_state_change(monkeypatch):
+    monkeypatch.setattr(windows_defense.platform, "system", lambda: "Windows")
+    monkeypatch.setattr(windows_defense.time, "sleep", lambda _: None)
+    samples = [
+        {"established": [], "listeners": [], "firewall_profiles": [{"name": "Public", "enabled": True}],
+         "defender_events": [], "collection_errors": []},
+        {"established": [], "listeners": [], "firewall_profiles": [{"name": "Public", "enabled": False}],
+         "defender_events": [], "collection_errors": []},
+    ]
+    monkeypatch.setattr(windows_defense, "collect_windows_host_snapshot", lambda **kwargs: samples.pop(0))
+    findings = list(windows_defense.iter_windows_defense_events(max_polls=2))
+    assert any(item["rule_id"] == "ATLAS-FW-003" for item in findings)
+    assert any(item["rule_id"] == "ATLAS-FW-001" for item in findings)

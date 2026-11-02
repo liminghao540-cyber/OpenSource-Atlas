@@ -278,8 +278,12 @@ def iter_windows_defense_events(*, poll_interval_seconds: int = 8,
         snapshot["listeners"] = [json.loads(x) for x in sorted(current_listeners - (previous_listeners or set()))]
         previous_connections, previous_listeners = current_connections, current_listeners
         current_firewall = json.dumps(snapshot["firewall_profiles"], sort_keys=True)
-        firewall_changed = previous_firewall is not None and current_firewall != previous_firewall
-        previous_firewall = current_firewall
+        firewall_available = bool(snapshot["firewall_profiles"]) and not any(
+            "Firewall" in str(error) for error in snapshot["collection_errors"]
+        )
+        firewall_changed = firewall_available and previous_firewall is not None and current_firewall != previous_firewall
+        if firewall_available:
+            previous_firewall = current_firewall
         if firewall_changed:
             snapshot.setdefault("collection_errors", [])
             snapshot["collection_errors"] = list(snapshot["collection_errors"]) + [
