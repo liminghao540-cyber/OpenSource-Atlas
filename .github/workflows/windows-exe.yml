@@ -71,3 +71,25 @@ jobs:
           path: dist/OpenSourceAtlas-Defense-BAT.zip
           if-no-files-found: error
           retention-days: 14
+      - name: Validate native PowerShell script syntax
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path WindowsDefense-V8.0.5.ps1), [ref]$tokens, [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) { $errors | Format-List | Out-String | Write-Error }
+      - name: Assemble native BAT bundle
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/native-bat | Out-Null
+          Copy-Item Start-WindowsDefense-V8.0.5.bat, WindowsDefense-V8.0.5.ps1, docs/WINDOWS_DEFENSE_NATIVE_BAT.md dist/native-bat/
+          Compress-Archive -Path dist/native-bat/* -DestinationPath dist/OpenSourceAtlas-Defense-Native-BAT.zip -Force
+      - name: Upload native BAT bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenSourceAtlas-Defense-Native-BAT-Windows-10
+          path: dist/OpenSourceAtlas-Defense-Native-BAT.zip
+          if-no-files-found: error
+          retention-days: 14
