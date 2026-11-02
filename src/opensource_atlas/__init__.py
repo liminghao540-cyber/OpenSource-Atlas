@@ -1,3 +1,3 @@
-"""OpenSource Atlas: explainable intelligence for public GitHub repositories."""
+"""OpenSource Atlas: explainable intelligence and security event analysis."""
 
-__version__ = "0.1.0"
+__version__ = "8.0.1"
