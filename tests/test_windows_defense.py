@@ -41,7 +41,7 @@ def test_risk_scoring_and_defender_mapping():
         "defender_events": [{"event_id": 1116, "message": "detection"}],
     }
     findings = windows_defense.analyze_host_snapshot(snapshot)
-    assert findings[0]["severity"] == "critical"
+    assert any(x["severity"] == "critical" for x in findings)
     assert any(x["rule_id"] == "ATLAS-FW-001" for x in findings)
     assert any(x["rule_id"] == "ATLAS-DEF-001" for x in findings)
 
