@@ -32,7 +32,7 @@ See the [V8.0.4 Windows Defense guide](docs/V8.0.4_WINDOWS_DEFENSE.md), [V8.0.3 
 ### Windows PowerShell
 
     py -3.11 -m venv .venv
-    .\\.venv\\Scripts\\Activate.ps1
+    .\.venv\Scripts\Activate.ps1
     python -m pip install -e ".[dev]"
     python -m pytest
 

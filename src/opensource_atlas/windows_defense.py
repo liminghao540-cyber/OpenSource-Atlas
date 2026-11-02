@@ -255,6 +255,7 @@ def iter_windows_defense_events(*, poll_interval_seconds: int = 8,
     started = time.monotonic()
     previous_connections: set[str] | None = None
     previous_listeners: set[str] | None = None
+    previous_firewall: str | None = None
     for poll in range(max_polls):
         if stop_event is not None and stop_event.is_set(): break
         if time.monotonic() - started >= max_runtime_seconds: break
@@ -271,11 +272,25 @@ def iter_windows_defense_events(*, poll_interval_seconds: int = 8,
         current_listeners = keys(snapshot["listeners"])
         if previous_connections is None:
             previous_connections, previous_listeners = current_connections, current_listeners
+            previous_firewall = json.dumps(snapshot["firewall_profiles"], sort_keys=True)
             continue
         snapshot["established"] = [json.loads(x) for x in sorted(current_connections - previous_connections)]
         snapshot["listeners"] = [json.loads(x) for x in sorted(current_listeners - (previous_listeners or set()))]
         previous_connections, previous_listeners = current_connections, current_listeners
+        current_firewall = json.dumps(snapshot["firewall_profiles"], sort_keys=True)
+        firewall_changed = previous_firewall is not None and current_firewall != previous_firewall
+        previous_firewall = current_firewall
+        if firewall_changed:
+            snapshot.setdefault("collection_errors", [])
+            snapshot["collection_errors"] = list(snapshot["collection_errors"]) + [
+                "Firewall profile state changed since the previous sample: " + current_firewall
+            ]
         for finding in analyze_host_snapshot(snapshot):
+            if finding.get("rule_id") == "ATLAS-FW-002" and firewall_changed:
+                finding["rule_id"] = "ATLAS-FW-003"
+                finding["title"] = "Windows Firewall profile state changed"
+                finding["severity"] = "medium"
+                finding["evidence"] = "Firewall profile state changed since the previous sample: " + current_firewall
             fingerprint = sha256(json.dumps(finding, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
             if fingerprint in seen: continue
             seen.add(fingerprint)

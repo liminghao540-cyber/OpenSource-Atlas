@@ -174,6 +174,8 @@ def cleanup_expired_temporary_blocks(*, state_path: str | Path = "data/firewall-
                                      ledger_path: str | Path = "data/firewall-response-ledger.jsonl",
                                      timeout_seconds: int = 30) -> dict[str, Any]:
     """Remove only expired rules whose full ownership metadata still matches."""
+    if isinstance(timeout_seconds, bool) or not isinstance(timeout_seconds, int) or not 1 <= timeout_seconds <= 120:
+        raise ValueError("timeout_seconds must be an integer between 1 and 120")
     state, ledger = _paths(state_path, ledger_path)
     rules = _load_state(state)
     now = datetime.now(timezone.utc)
@@ -207,6 +209,8 @@ def rollback_temporary_outbound_blocks(*, preview: bool = True,
                                        timeout_seconds: int = 30) -> dict[str, Any]:
     """Preview by default; set preview=False to remove only exactly owned rules."""
     if not isinstance(preview, bool): raise ValueError("preview must be a boolean")
+    if isinstance(timeout_seconds, bool) or not isinstance(timeout_seconds, int) or not 1 <= timeout_seconds <= 120:
+        raise ValueError("timeout_seconds must be an integer between 1 and 120")
     state, ledger = _paths(state_path, ledger_path)
     rules = _load_state(state)
     if preview:
