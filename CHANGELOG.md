@@ -3,6 +3,20 @@
 All notable changes to OpenSource Atlas are documented here.
 A version is released only when its matching Git tag and GitHub Release exist.
 
+## [8.0.4] - Unreleased
+
+### Added
+- V6-style bounded Windows host snapshot: TCP connections/listeners, process metadata, Authenticode status, bounded SHA-256, firewall profile state, and Defender 1116/1117 events.
+- Explainable heuristic host findings and bounded foreground monitoring with an in-memory deduplication set.
+- V7-style explicit human-approved temporary outbound IP blocks, strict public-IP validation, bounded TTL/rule count, ownership state, response ledger, expiry cleanup, and preview-first exact rollback.
+- Mocked tests and Windows 10 usage/safety documentation.
+
+### Security and limitations
+- Monitoring remains opt-in, foreground-only, bounded, and read-only.
+- Firewall response is a separate explicit call; exact approval token BLOCK is required. No automatic response.
+- Expiry cleanup is caller-triggered, not a background timer. Exact ownership metadata is verified before rule removal.
+- PowerShell is mocked in CI; live Windows 10 validation remains required.
+
 ## [8.0.3] - Unreleased
 
 ### Added
@@ -13,22 +27,18 @@ A version is released only when its matching Git tag and GitHub Release exist.
 ### Security and limitations
 - Foreground, caller-started, read-only polling only; no service, scheduled task, persistence, or auto-start.
 - No telemetry upload, process termination, file deletion, quarantine, firewall changes, or automatic response.
-- PowerShell integration is mocked in CI; live Windows 10 validation remains required.
+- PowerShell integration is mocked in CI. A live Windows 10 validation remains required.
 
 ## [8.0.2] - Unreleased
 
 ### Added
 - Caller-supplied in-memory asset inventory normalization and duplicate detection.
-- Deterministic finding correlation and deduplication with stable fingerprints.
-- Evidence provenance, occurrence counts, time bounds, and asset enrichment.
-- Expiring fingerprint-based suppressions that retain underlying evidence.
-- Explicit, bounded, read-only Windows Event Log snapshot collection for Application, System, and Security logs.
-- Mocked tests for Windows collection validation, timeout handling, fixed PowerShell invocation, and output normalization.
+- Deterministic finding fingerprints, deduplication, provenance retention, asset enrichment, and expiring suppressions.
+- Explicit, bounded, read-only Windows Event Log snapshot collection.
 
 ### Security and limitations
-- Windows event collection is opt-in and read-only; it is not a background monitor or EDR agent.
+- Event collection is opt-in and read-only; it is not a background monitor or EDR agent.
 - No endpoint discovery, telemetry upload, persistence, or automatic response.
-- Suppression affects triage state only; response execution remains disabled.
 
 ## [8.0.1] - Unreleased
 
