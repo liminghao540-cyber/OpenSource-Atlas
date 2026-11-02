@@ -37,7 +37,7 @@ def test_rejects_non_standard_json_constants():
 def test_enforces_line_and_event_limits():
     result = ingest_jsonl(
         '{"event_type":"first"}\n{"event_type":"second"}\n',
-        max_line_bytes=20,
+        max_line_bytes=30,
         max_events=1,
     )
     assert result["accepted"] == 1
@@ -63,3 +63,9 @@ def test_preserves_unicode_and_extra_event_fields():
     event = {"event_type": "custom", "asset": "服务器-一", "labels": ["生产"]}
     result = ingest_jsonl(json.dumps(event, ensure_ascii=False))
     assert result["events"] == [event]
+
+
+def test_rejects_oversized_line():
+    result = ingest_jsonl('{"event_type":"x","payload":"' + ("a" * 40) + '"}', max_line_bytes=32)
+    assert result["accepted"] == 0
+    assert result["errors"] == [{"line": 1, "error": "line exceeds max_line_bytes"}]
